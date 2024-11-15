@@ -53,6 +53,7 @@ import sys
 import tools
 import subprocess
 import dash
+import bell_tokens
 
 
 def search_shows(query: str, quiet: bool = False) -> None:
@@ -86,7 +87,9 @@ def list_episodes(show_path: str, quiet: bool = False) -> dict[str, str]:
 
     req_url, headers = noovo_tools.show_path_url(show_path)
     
-    resp = requests.get(req_url, headers=headers).json()
+    resp = {"errors": {}}
+    while "errors" in resp.keys():
+        resp = requests.get(req_url, headers=headers).json()
 
     with open("file.json", "wt") as f:
         f.write(json.dumps(resp))
@@ -98,7 +101,9 @@ def list_episodes(show_path: str, quiet: bool = False) -> dict[str, str]:
     
     req_url, headers = noovo_tools.show_id_url(show_id, show_path)
 
-    resp = requests.get(req_url, headers=headers).json()
+    resp = {"errors": {}}
+    while "errors" in resp.keys():
+        resp = requests.get(req_url, headers=headers).json()
 
     with open("file.json", "wt") as f:
         f.write(json.dumps(resp))
@@ -114,53 +119,67 @@ def list_episodes(show_path: str, quiet: bool = False) -> dict[str, str]:
             print(show_genre)
         print("-----------------------------------------------------------------------------------------------------")
 
-    show["episodes"] = []
+    if show["mediaType"] == "SERIES":
 
-    for season in reversed(show["seasons"]):
+        show["episodes"] = []
 
-        req_url, headers, body = noovo_tools.season_id_url(season["id"], show_path)
+        for season in show["seasons"]:
 
-        resp = requests.post(req_url, headers=headers, data=json.dumps(body)).json()
+            req_url, headers, body = noovo_tools.season_id_url(season["id"], show_path)
 
-        with open("file.json", "wt") as f:
-            f.write(json.dumps(resp))
+            resp = requests.post(req_url, headers=headers, data=json.dumps(body)).json()
 
+            with open("file.json", "wt") as f:
+                f.write(json.dumps(resp))
 
+            for episode in resp["data"]["axisSeason"]["episodes"]:
 
+                with open("file.json", "wt") as f:
+                    f.write(json.dumps(episode))
 
-        for episode in resp["data"]["axisSeason"]["episodes"]:
+                #req_url, headers, body  = noovo_tools.episode_id_url(episode["id"])
+                #
+                #curl_command = f"curl '{req_url}' --compressed -X POST"
+                #for shit1, shit2 in headers.items():
+                #    curl_command += f" -H '{shit1}: {shit2}'"
+                #curl_command += f" --data-raw '{json.dumps(body)}'"
+                #print(curl_command)
+                #
+                #resp = requests.post(req_url, headers=headers, data=json.dumps(body)).json()
+                #
+                #with open("file.json", "wt") as f:
+                #    f.write(json.dumps(resp))
 
+                episode_info = get_episodes_info(episode)
+                episode_info["seasonNumber"] = season["seasonNumber"]
+                episode_info["seasonTitle"] = season["title"]
+
+                show["episodes"].append(episode_info)
+
+                if not quiet:
+                    print(f"{episode["path"]} - {season["title"]} - {episode["title"]}")
+
+        return show
+    
+    else:
+        show["episodes"] = []
+
+        for episode in show["episode"]:
             with open("file.json", "wt") as f:
                 f.write(json.dumps(episode))
             
-            #req_url, headers, body  = noovo_tools.episode_id_url(episode["id"])
-            #
-            #curl_command = f"curl '{req_url}' --compressed -X POST"
-            #for shit1, shit2 in headers.items():
-            #    curl_command += f" -H '{shit1}: {shit2}'"
-            #curl_command += f" --data-raw '{json.dumps(body)}'"
-            #print(curl_command)
-            #
-            #resp = requests.post(req_url, headers=headers, data=json.dumps(body)).json()
-            #
-            #with open("file.json", "wt") as f:
-            #    f.write(json.dumps(resp))
-
             episode_info = get_episodes_info(episode)
-            episode_info["seasonNumber"] = season["seasonNumber"]
-            episode_info["seasonTitle"] = season["title"]
-            
+            episode_info["seasonNumber"] = 0
+            episode_info["seasonTitle"] = episode["title"]
+
             show["episodes"].append(episode_info)
 
-            if quiet:
-                continue
-
-            if show["mediaType"] == "SERIES":
-                print(f"{episode["path"]} - {show["title"]} {episode["title"]}")
-            else:
-                print(f"{episode["url"]} - {season["title"]} {episode["title"]}")
-
+            print(f"{episode["path"]} - {show["title"]} - {episode["title"]}")
+    
     return show
+
+
+
 
 def get_show_info(resp):
     show: dict[str, str] = {}
@@ -173,9 +192,17 @@ def get_show_info(resp):
     #show["type"] = resp["data"]["contentData"]
     #show["numberOfEpisodes"] = resp["data"]["contentData"]
 
-    show["seasons"] = []
-    for season in resp["data"]["contentData"]["seasons"]:
-        show["seasons"].append({"title": season["title"], "id": season["id"], "seasonNumber": season["seasonNumber"]})
+    
+    if show["mediaType"] == "SERIES":
+        show["seasons"] = []
+        for season in resp["data"]["contentData"]["seasons"]:
+            show["seasons"].append({"title": season["title"], "id": season["id"], "seasonNumber": season["seasonNumber"]})
+        
+    else:
+        show["episode"] = []
+        for episode in resp["data"]["contentData"]["mainContents"]["page"]["items"]:
+            show["episode"].append(episode)
+
 
     show["genres"] = []
 
@@ -191,11 +218,18 @@ def get_episodes_info(episode):
     episode_info["id"] = episode["id"]
     episode_info["title"] = episode["title"]
     episode_info["duration"] = episode["duration"]
-    episode_info["description"] = episode["description"]
+
+    try:
+        episode_info["description"] = episode["description"]
+    except:
+        episode_info["description"] = episode["summary"]
+    
     episode_info["episodeNumber"] = episode["episodeNumber"]
-    episode_info["contentType"] = episode["contentType"]
+    #episode_info["contentType"] = episode["contentType"]
 
     return episode_info
+
+
 
 def get_chosen_episodes(all_episodes, url, start_season, end_season, start_episode, end_episode, allow_trailers, quiet):
     chosen_episodes = show_info(url, quiet)
@@ -211,8 +245,8 @@ def get_chosen_episodes(all_episodes, url, start_season, end_season, start_episo
         if int(episode["seasonNumber"]) <= start_season and int(episode["episodeNumber"]) < start_episode:
             continue
         
-        if episode["mediaType"] != "Trailer" or allow_trailers:
-            chosen_episodes["episodes"].append(episode)
+        #if episode["mediaType"] != "Trailer" or allow_trailers:
+        chosen_episodes["episodes"].append(episode)
     
     return chosen_episodes
         
@@ -225,30 +259,50 @@ def show_info(show_path: str, quiet: bool = False) -> dict[str, str]:
         for key in shows_path[0].keys():
             show_path = key
 
-    url: str = f"https://services.radio-canada.ca/ott/catalog/v2/toutv/show/{url}?device=web"
 
-    resp = requests.get(url=url).json()
+    req_url, headers = noovo_tools.show_path_url(show_path)
+    
+    resp = {"errors": {}}
+    while "errors" in resp.keys():
+        resp = requests.get(req_url, headers=headers).json()
+
+    with open("file.json", "wt") as f:
+        f.write(json.dumps(resp))
+
+    if resp["data"]["resolvedPath"]["segments"][1]["content"]["__typename"] != "AxisMedia":
+        return
+    
+    show_id = resp["data"]["resolvedPath"]["segments"][1]["content"]["id"]
+    
+    req_url, headers = noovo_tools.show_id_url(show_id, show_path)
+
+    resp = {"errors": {}}
+    while "errors" in resp.keys():
+        resp = requests.get(req_url, headers=headers).json()
+
+    with open("file.json", "wt") as f:
+        f.write(json.dumps(resp))
 
     show = get_show_info(resp)
     
     if not quiet:
-        print(f"{show["title"]} [{show["country"]}]")
+        print(show["title"])
         print("-----------------------------------------------------------------------------------------------------")
         print(show["description"])
         print("-----------------------------------------------------------------------------------------------------")
-        for show_tags in show["tags"]:
-            print(show_tags)
+        for show_genre in show["genres"]:
+            print(show_genre)
+        #print("-----------------------------------------------------------------------------------------------------")
+        #print(f"{show["numberOfSeasons"]} saisons")
+        #print(f"{show["numberOfEpisodes"]} episodes")
         print("-----------------------------------------------------------------------------------------------------")
-        print(f"{show["numberOfSeasons"]} saisons")
-        print(f"{show["numberOfEpisodes"]} episodes")
-        print("-----------------------------------------------------------------------------------------------------")
-        print(show["type"])
+        print(show["mediaType"])
 
     return show
 
 
-def get_download(url, latest, options):
-    url, start_season, end_season, start_episode, end_episode = tools.parse_season_episode(url, args[3])
+def get_download(url, latest, seasons_episodes, options):
+    url, start_season, end_season, start_episode, end_episode = tools.parse_season_episode(url, seasons_episodes)
     all_episodes = list_episodes(url, options["quiet"])
 
     chosen_episodes = {}
@@ -268,26 +322,28 @@ def get_download(url, latest, options):
     for episode in chosen_episodes["episodes"]:
         options["clean_name"] = chosen_episodes["title"]
 
-        if episode["mediaType"] == "Standalone":
+        if episode["seasonNumber"] == 0 and episode["episodeNumber"] == 0:
             options["clean_name"] = chosen_episodes["title"]
-            options["path"] = f"{chosen_episodes["titre"]}"
+            options["path"] = f'{chosen_episodes["titre"]}'
         
         else:
-            options["path"] = f"{chosen_episodes["title"]}.S{episode["seasonNumber"]:02}E{episode["episodeNumber"]:02}"
-            options["clean_name"] = f"{chosen_episodes["title"]} Saison {episode["seasonNumber"]} Episode {episode["episodeNumber"]}"
+            options["path"] = f'{chosen_episodes["title"]}.S{episode["seasonNumber"]:02}E{episode["episodeNumber"]:02}.{options["language"].upper()[:2]}'
+            options["clean_name"] = f'{chosen_episodes["title"]} Saison {episode["seasonNumber"]} Episode {episode["episodeNumber"]}'
 
-            if options["all_audios"]:
-                options["path"] += ".AD"
+        if options["all_audios"]:
+            options["path"] += ".AD"
         
-        options["path"] += f".{options["resolution"]}p.{options["language"].upper()[:2]}{custom_string}"
+        options["path"] += f'.{options["resolution"]}p{custom_string}'
 
-        download_content(episode["idMedia"], options)
+        download_content(episode["id"], options)
 
 
 def download_content(id: int, options):
-    episode_info_url: str = f"https://services.radio-canada.ca/media/validation/v2/?appCode=toutv&connectionType=hd&deviceType=multiams&idMedia={id}&multibitrate=true&output=json&tech=dash&manifestVersion=2"
+    episode_info_url, headers, body = noovo_tools.episode_id_url(id)
 
-    r = requests.get(episode_info_url)
+    #curl_command = "curl -X POST"
+
+    r = requests.post(episode_info_url, headers=headers, data=body)
     resp = r.json()
     
     if r.status_code != 200:
@@ -415,7 +471,7 @@ def help():
 def connect():
     settings_path = "settings.json"
 
-    return(toutv_tokens.login(settings_path))
+    return(bell_tokens.login(settings_path, "noovo"))
 
 def search(args):
     if len(args) > 2:
@@ -460,6 +516,11 @@ def download(args):
         if "-s" in args:
             subs = True
         
+        seasons_episodes = ""
+        if len(args) > 3:
+            if args[3][1:] != "-":
+                seasons_episodes = args[3]
+        
         url = args[2]
         if len(args) > 2:
             if not noovo_tools.validate_url(url):
@@ -475,7 +536,7 @@ def download(args):
             "subs": subs
         }
         
-        get_download(url, latest, options)
+        get_download(url, latest, seasons_episodes, options)
 
 
 
@@ -513,17 +574,29 @@ args = sys.argv
 
 
 #if args[1] == "list":
-if "list" == "list":
-    args.append("list")
-    args.append("emmerdeur")
-
-    list(args)
+#    args.append("list")
+#    #args.append("completement")
+#    args.append("emmerdeur")
+#
+#    list(args)
 #    
 #
 #
 #if args[1] == "info":
+#    args.append("list")
+#    args.append("completement")
+#    args.append("emmerdeur")
 #    info(args)
 #
 #if args[1] == "download":
-#    download(args)
+if "download" == "download":
+
+    args.append("download")
+    args.append("lycee")
+    #args.append("-r")
+    #args.append("720")
+    #args.append("-ad")
+    #args.append("s1-s3")
+
+    download(args)
 #

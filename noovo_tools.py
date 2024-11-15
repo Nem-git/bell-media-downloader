@@ -4,7 +4,7 @@ import requests
 
 
 def validate_url(show_path: str):
-    accepted_characters: str = string.ascii_lowercase + "-/"
+    accepted_characters: str = string.ascii_lowercase + string.digits + "-/"
     for char in show_path:
         if char not in accepted_characters:
             return False
