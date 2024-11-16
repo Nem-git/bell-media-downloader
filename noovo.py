@@ -78,16 +78,16 @@ def search_shows(query: str, quiet: bool = False) -> None:
 
 
 def list_episodes(show_path: str, quiet: bool = False) -> dict[str, str]:
-    if not noovo_tools.validate_url(show_path):
-        shows_path = search_shows(show_path, quiet)
-        for key in shows_path[0].keys():
-            show_path = key
-    
 
-
-    req_url, headers = noovo_tools.show_path_url(show_path)
+    req_url = noovo_tools.show_path_url(show_path)
     
     resp = {"errors": {}}
+    headers = {
+        "graphql-client-platform": "entpay_web",
+        #"Referer": f"https://noovo.ca{show_path}",
+        #"TE": "trailers"
+    }
+
     while "errors" in resp.keys():
         resp = requests.get(req_url, headers=headers).json()
 
@@ -123,7 +123,7 @@ def list_episodes(show_path: str, quiet: bool = False) -> dict[str, str]:
 
         show["episodes"] = []
 
-        for season in show["seasons"]:
+        for season in reversed(show["seasons"]):
 
             req_url, headers, body = noovo_tools.season_id_url(season["id"], show_path)
 
@@ -254,17 +254,12 @@ def get_chosen_episodes(all_episodes, url, start_season, end_season, start_episo
 
 
 def show_info(show_path: str, quiet: bool = False) -> dict[str, str]:
-    if not noovo_tools.validate_url(show_path):
-        shows_path = search_shows(show_path, quiet)
-        for key in shows_path[0].keys():
-            show_path = key
 
-
-    req_url, headers = noovo_tools.show_path_url(show_path)
+    req_url = noovo_tools.show_path_url(show_path)
     
     resp = {"errors": {}}
     while "errors" in resp.keys():
-        resp = requests.get(req_url, headers=headers).json()
+        resp = requests.get(req_url).json()
 
     with open("file.json", "wt") as f:
         f.write(json.dumps(resp))
@@ -341,29 +336,52 @@ def get_download(url, latest, seasons_episodes, options):
 def download_content(id: int, options):
     episode_info_url, headers, body = noovo_tools.episode_id_url(id)
 
-    #curl_command = "curl -X POST"
+    #curl_command = f"curl -X POST '{episode_info_url}'"
+    #for shit, shit2 in headers.items():
+    #    curl_command += f" -H '{shit}:{shit2}'"
+    #curl_command += f"-d '{json.dumps(body)}'"
+    #print(curl_command)
 
-    r = requests.post(episode_info_url, headers=headers, data=body)
-    resp = r.json()
-    
-    if r.status_code != 200:
-        return
 
-    if resp["errorCode"] != 0:
-        r = requests.get(url=episode_info_url, headers=options["headers"])
-        resp: dict[str, str] = r.json()
     
-    if r.status_code != 200:
-        return
+    episode_info_resp = {"errors": {}}
+    while "errors" in episode_info_resp.keys():
+        r = requests.post(episode_info_url, headers=headers, data=json.dumps(body))
+        episode_info_resp = r.json()
+
+    with open("file.json", "wt") as f:
+        f.write(json.dumps(episode_info_resp))
 
     #fixed_resp = tools.fix_json(resp)
 
-    low_res_mpd = fixed_resp["url"]
-    mpd_url: str = low_res_mpd.replace("filter=3000", "filter=7000")
-    key: str = fixed_resp["widevineAuthToken"]
-    licence_url: str = fixed_resp["widevineLicenseUrl"]
+    first_id = episode_info_resp["data"]["axisContent"]["axisId"]
+    service_hub_name = episode_info_resp["data"]["axisContent"]["authConstraints"][0]["packageName"]
 
-    headers = {"x-dt-auth-token": key}
+    config_info_url = noovo_tools.service_config("crave")
+    config_resp = requests.get(config_info_url).json()
+
+    with open("file.json", "wt") as f:
+        f.write(json.dumps(config_resp))
+
+    episode_second_id_url = noovo_tools.second_episode_id(first_id, service_hub_name)
+
+    episode_second_id_resp = {"errors": {}}
+    while "errors" in episode_second_id_resp.keys():
+        r = requests.get(episode_second_id_url)
+        episode_second_id_resp = r.json()
+    
+    second_id = episode_second_id_resp["Items"][0]["Id"]
+
+    mpd_req_url = noovo_tools.mpd_url(first_id, second_id, service_hub_name)
+
+    low_res_mpd = requests.get(mpd_req_url).text
+
+    mpd_url: str = low_res_mpd.replace("zbest", "zultimate")
+    #key: str = fixed_resp["widevineAuthToken"]
+    licence_url: str = config_resp["api"]["drmLicenceServerUrl"] + "/widevine"
+
+    #headers = {"x-dt-auth-token": key}
+    headers = {}
 
     options["mpd_url"] = mpd_url
     options["licence_url"] = licence_url
@@ -371,9 +389,9 @@ def download_content(id: int, options):
 
     
 
-    return download_toutv(options)
+    return download_bell(options)
 
-def download_toutv(options):
+def download_bell(options):
 
     options["pssh"] = dash.get_pssh(options["mpd_url"], options["quiet"])
 
@@ -482,7 +500,11 @@ def search(args):
 
 def list(args):
     if len(args) > 2:
-        return list_episodes(args[2])
+        if not noovo_tools.validate_url(args[2]):
+            url = search_shows(args[2])
+            for key in url[0].keys():
+                url = key
+            return list_episodes(url)
 
 def info(args):
     if len(args) > 2:
@@ -574,9 +596,10 @@ args = sys.argv
 
 
 #if args[1] == "list":
+#if "list" == "list":
 #    args.append("list")
 #    #args.append("completement")
-#    args.append("emmerdeur")
+#    args.append("souper")
 #
 #    list(args)
 #    
@@ -597,6 +620,6 @@ if "download" == "download":
     #args.append("720")
     #args.append("-ad")
     #args.append("s1-s3")
+    args.append("-l")
 
     download(args)
-#

@@ -158,5 +158,3 @@ def authorization_name(service_name) -> str:
     encoded = decoded.encode()
     b64 = base64.b64encode(encoded)
     return b64.decode()
-
-#expiry, access_token, refresh_token, wvd_path, custom_string = login(settings_path, "noovo")

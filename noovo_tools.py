@@ -9,40 +9,37 @@ def validate_url(show_path: str):
         if char not in accepted_characters:
             return False
     
-    req_url, headers = show_path_url(show_path)
-    
-    resp = requests.get(req_url)
+    req_url = show_path_url(show_path)
+    curl_command = f"curl '{req_url}'"
+    print(curl_command)
 
-    if resp.status_code != 200:
+    r = requests.get(req_url)
+
+    if r.status_code != 200 or "errors" in r.text:
         return False
-        
-    if "errors" in resp.text:
-        resp = requests.get(req_url, headers=headers)
-        if "errors" in resp.text:
-            return False
 
     return True
+
+
+def mpd_url(first_id: str, second_id: str, service_hub_name: str):
+    return f"https://capi.9c9media.com/destinations/{service_hub_name}/platforms/desktop/playback/contents/{first_id}/contentPackages/{second_id}/manifest.mpd?action=reference&ssl=true&filter=fe&mca=true&uhd=true&mcv=true&hd=true&tpt=true&mta=true&stt=true"
+
+
+def second_episode_id(first_id: str, service_hub_name: str):
+    return f"https://capi.9c9media.com/destinations/{service_hub_name}/platforms/desktop/contents/{first_id}/contentPackages?%24lang=fr"
+
+def service_config(service_name: str):
+    return f"https://config.jasperplayer.com/v20231031/{service_name}/production/web/config.json"
 
 
 def show_id_url(show_id: str, show_path: str):
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0",
-        "Accept": "*/*",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Accept-Language": "en-US,en;q=0.5",
-        "Connection": "keep-alive",
-        "content-type": "application/json",
-        "DNT": "1",
         "graphql-client-platform": "entpay_web",
-        "Priority": "u=4",
-        "Referer": f"https://noovo.ca{show_path}",
-        "Sec-GPC": "1",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-origin",
-        "TE": "trailers"
+        #"Referer": f"https://noovo.ca{show_path}",
+        #"TE": "trailers"
     }
+    #headers = {}
 
     encoded_show_id = show_id.replace("/", "%2F")
 
@@ -52,57 +49,34 @@ def show_id_url(show_id: str, show_path: str):
 
 def show_path_url(show_path: str):
 
-    #headers = {
-    #    "graphql-client-platform": "entpay_web",
-    #    "Sec-Fetch-Mode": "cors",
-    #    "Sec-Fetch-Site": "same-origin"
-    #}
-
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0",
-        "Accept": "*/*",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Accept-Language": "en-US,en;q=0.5",
-        "Connection": "keep-alive",
-        "content-type": "application/json",
-        "DNT": "1",
-        "graphql-client-platform": "entpay_web",
-        "Priority": "u=4",
-        "Referer": f"https://noovo.ca{show_path}",
-        "Sec-GPC": "1",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-origin",
-        "TE": "trailers"
-    }
-
     encoded_show_path = show_path.replace("/", "%2F")
 
     url = f"https://www.noovo.ca/space-graphql/apq/graphql?operationName=resolvePath&variables=%7B%22page%22%3A0%2C%22path%22%3A%22{encoded_show_path}%22%2C%22subscriptions%22%3A%5B%22CANAL_D%22%2C%22CANAL_VIE%22%2C%22INVESTIGATION%22%2C%22NOOVO%22%2C%22Z%22%5D%2C%22maturity%22%3A%22ADULT%22%2C%22language%22%3A%22FRENCH%22%2C%22authenticationState%22%3A%22UNAUTH%22%2C%22playbackLanguage%22%3A%22FRENCH%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%2226d314b59ba2708d261067964353f9a92f1c2689f50d1254fa4d03ddb9b9092a%22%7D%7D"
     #url = f"https://www.noovo.ca/space-graphql/apq/graphql?operationName=resolvePath&variables=%7B%22page%22%3A0%2C%22path%22%3A%22{encoded_show_path}%22%2C%22subscriptions%22%3A%5B%5D%2C%22maturity%22%3A%22ADULT%22%2C%22language%22%3A%22FRENCH%22%2C%22authenticationState%22%3A%22AUTH%22%2C%22playbackLanguage%22%3A%22FRENCH%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%2226d314b59ba2708d261067964353f9a92f1c2689f50d1254fa4d03ddb9b9092a%22%7D%7D"
 
-    return url, headers
+    return url
 
 
 def season_id_url(season_id: str, show_path: str):
 
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0",
-        "Accept": "*/*",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Accept-Language": "en-US,en;q=0.5",
-        "Connection": "keep-alive",
-        "content-type": "application/json",
-        "DNT": "1",
-        "graphql-client-platform": "entpay_web",
-        "Priority": "u=4",
-        "Referer": f"https://noovo.ca{show_path}",
-        "Sec-GPC": "1",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-origin",
-        "TE": "trailers"
-    }
+    #headers = {
+    #    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0",
+    #    "Accept": "*/*",
+    #    "Accept-Encoding": "gzip, deflate, br, zstd",
+    #    "Accept-Language": "en-US,en;q=0.5",
+    #    "Connection": "keep-alive",
+    #    "content-type": "application/json",
+    #    "DNT": "1",
+    #    "graphql-client-platform": "entpay_web",
+    #    "Priority": "u=4",
+    #    "Referer": f"https://noovo.ca{show_path}",
+    #    "Sec-GPC": "1",
+    #    "Sec-Fetch-Dest": "empty",
+    #    "Sec-Fetch-Mode": "cors",
+    #    "Sec-Fetch-Site": "same-origin",
+    #    "TE": "trailers"
+    #}
+    headers = {}
 
 
     body = {
@@ -159,6 +133,7 @@ def episode_id_url(episode_id: str):
         "Sec-Fetch-Site": "same-origin",
         "TE": "trailers"
     }
+    headers = {}
 
     body = {
         "operationName": "axisContent",
