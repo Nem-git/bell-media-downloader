@@ -230,7 +230,7 @@ class Bell_Media:
         chosen_episodes = {}
         
         if latest:
-            chosen_episodes = self.show_info(show["path"], options["quiet"])
+            chosen_episodes = self.show_info(show, options["quiet"])
             chosen_episodes["episodes"] = all_episodes["episodes"][-1:]
         
         else:
@@ -465,11 +465,11 @@ bell_media = Bell_Media()
 
 if len(args) < 2:
     #print(crave_tools.help_text)
-    bell_media.tool = noovo_tools
-    bell_media.service = "noovo"
-    args.append(bell_media.service)
-    args.append("info")
-    args.append("club")
+    #bell_media.tool = noovo_tools
+    #bell_media.service = "noovo"
+    #args.append(bell_media.service)
+    #args.append("download")
+    #args.append("club")
     #args.append("download")
     #args.append("med")
     #args.append("-l")
@@ -478,7 +478,7 @@ if len(args) < 2:
     #args.append("-l")
     #args.append("-q")
 
-    bell_media.info(args)
+    #bell_media.download(args)
 
     exit()
 

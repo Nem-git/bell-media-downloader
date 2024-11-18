@@ -76,7 +76,7 @@ def ensure_login(username, password, refresh_token, service_name) -> None | tupl
         r = login_request(username, password, service_name)
     
     if r.status_code != 200:
-        return
+        return "", "", 0.0
     
     # ===========================================================
     # Parse refresh/login response
