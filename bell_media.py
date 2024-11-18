@@ -31,7 +31,7 @@ class Bell_Media:
             results.append(show)
             
             if not quiet:
-                print(f"{show["title"]} | {show["path"]}\n{show["summary"]}\n")
+                print(f'{show["title"]} | {show["path"]}\n{show["summary"]}\n')
     
         return results
     
@@ -82,7 +82,7 @@ class Bell_Media:
                 #show["episodes"].append(episode)
 
                 if not quiet:
-                    print(f"{episode["path"]} - {episode["title"]}")
+                    print(f'{episode["path"]} - {episode["title"]}')
     
     
         show["genres"] = []
@@ -108,7 +108,7 @@ class Bell_Media:
             episodes.append(episode_info)
     
             if not quiet:
-                print(f"{episode["path"]} - {season["title"]} - {episode["title"]}")
+                print(f'{episode["path"]} - {season["title"]} - {episode["title"]}')
     
         return episodes
     
@@ -297,7 +297,7 @@ class Bell_Media:
             "--mp4-real-time-decryption",
             "--use-shaka-packager",
             "-sv",
-            f"res={options["resolution"]}*",
+            f'res={options["resolution"]}*',
             "--save-name",
             options["path"]
         ]
@@ -314,10 +314,11 @@ class Bell_Media:
             n_m3u8dl_re_command.append("best")
         
         if options["subs"]:
-            n_m3u8dl_re_command.append("--sub-format")
-            n_m3u8dl_re_command.append("VTT")
             n_m3u8dl_re_command.append("-ss")
             n_m3u8dl_re_command.append("all")
+            #n_m3u8dl_re_command.append("--sub-format")
+            #n_m3u8dl_re_command.append("vtt")
+
     
     
         if options["quiet"]:
@@ -328,7 +329,7 @@ class Bell_Media:
         mkvmerge_command = [
             "mkvmerge",
             "-o",
-            f"{options["path"]}.mkv",
+            f'{options['path']}.mkv',
             "--title",
             options["clean_name"],
             "--default-language",
@@ -354,18 +355,18 @@ class Bell_Media:
             track_name = "VFQ"
         
         #VIDEO
-        mkvmerge_command.extend(["--original-flag", "0", "--default-track-flag", "0", "--track-name", f"0:original {options["resolution"]}p", f"{options["path"]}.mp4"])
+        mkvmerge_command.extend(["--original-flag", "0", "--default-track-flag", "0", "--track-name", f'0:original {options["resolution"]}p', f'{options["path"]}.mp4'])
     
         #AUDIO
-        mkvmerge_command.extend(["--original-flag", "0", "--default-track-flag", "0", "--language", f"0:{options["language"]}", "--track-name", f"0:{track_name}", audio_1[0]])
+        mkvmerge_command.extend(["--original-flag", "0", "--default-track-flag", "0", "--language", f'0:{options["language"]}', "--track-name", f"0:{track_name}", audio_1[0]])
         
         if options["all_audios"]:
             #AUDIODESCRIPTION
-            mkvmerge_command.extend(["--visual-impaired-flag", "1", "--default-track-flag", "0:0", "--language", f"0:{options["language"]}", "--track-name", f"0:{track_name} AD", audio_2[0]])
+            mkvmerge_command.extend(["--visual-impaired-flag", "1", "--default-track-flag", "0:0", "--language", f'0:{options["language"]}', "--track-name", f"0:{track_name} AD", audio_2[0]])
     
         if options["subs"]:
             if subs != []:
-                mkvmerge_command.extend(["--language", f"0:{options["language"]}", "--track-name", f"0:{track_name} ", subs])
+                mkvmerge_command.extend(["--language", f'0:{options["language"]}', "--track-name", f"0:{track_name} ", subs])
     
         if options["quiet"]:
             subprocess.run(mkvmerge_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -465,20 +466,24 @@ bell_media = Bell_Media()
 
 if len(args) < 2:
     #print(crave_tools.help_text)
-    #bell_media.tool = noovo_tools
-    #bell_media.service = "noovo"
-    #args.append(bell_media.service)
-    #args.append("download")
-    #args.append("club")
+    bell_media.tool = noovo_tools
+    bell_media.service = "noovo"
+    args.append(bell_media.service)
+    args.append("download")
+    args.append("club")
     #args.append("download")
     #args.append("med")
-    #args.append("-l")
+    args.append("-l")
+    args.append("-s")
+    args.append("-ad")
     #args.append("download")
     #args.append("furiosa")
     #args.append("-l")
     #args.append("-q")
+    args.append("-r")
+    args.append("360")
 
-    #bell_media.download(args)
+    bell_media.download(args)
 
     exit()
 
