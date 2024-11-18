@@ -5,6 +5,8 @@ import dash
 import bell_tokens
 import crave_tools
 import noovo_tools
+import os
+import requests
 
 
 
@@ -281,6 +283,8 @@ class Bell_Media:
     
         options["mpd_url"] = mpd_url
         options["licence_url"] = licence_url
+
+        options["subs_url"] = self.tool.subtitles_url(id, second_id, service_hub_name)
     
         return self.download_bell(options)
     
@@ -314,12 +318,12 @@ class Bell_Media:
             n_m3u8dl_re_command.append("best")
         
         if options["subs"]:
-            n_m3u8dl_re_command.append("-ss")
-            n_m3u8dl_re_command.append("all")
-            #n_m3u8dl_re_command.append("--sub-format")
-            #n_m3u8dl_re_command.append("vtt")
-
-    
+            vtt_text = requests.get(options["subs_url"], headers=options["headers"]).content
+            if self.service == "crave":
+                vtt_text = requests.get(vtt_text, headers=options["headers"]).content
+            
+            with open(f"{options['path']}.vtt", "wb") as f:
+                f.write(vtt_text)
     
         if options["quiet"]:
             subprocess.run(n_m3u8dl_re_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -329,7 +333,7 @@ class Bell_Media:
         mkvmerge_command = [
             "mkvmerge",
             "-o",
-            f'{options['path']}.mkv',
+            f"{options['path']}.mkv",
             "--title",
             options["clean_name"],
             "--default-language",
@@ -366,7 +370,7 @@ class Bell_Media:
     
         if options["subs"]:
             if subs != []:
-                mkvmerge_command.extend(["--language", f'0:{options["language"]}', "--track-name", f"0:{track_name} ", subs])
+                mkvmerge_command.extend(["--language", f'0:{options["language"]}', "--track-name", f"0:{track_name} ", subs[0]])
     
         if options["quiet"]:
             subprocess.run(mkvmerge_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -466,24 +470,24 @@ bell_media = Bell_Media()
 
 if len(args) < 2:
     #print(crave_tools.help_text)
-    bell_media.tool = noovo_tools
-    bell_media.service = "noovo"
-    args.append(bell_media.service)
-    args.append("download")
-    args.append("club")
+    #bell_media.tool = noovo_tools
+    #bell_media.service = "noovo"
+    #args.append(bell_media.service)
+    #args.append("download")
+    #args.append("club")
     #args.append("download")
     #args.append("med")
-    args.append("-l")
-    args.append("-s")
-    args.append("-ad")
+    #args.append("-l")
+    #args.append("-s")
+    #args.append("-ad")
     #args.append("download")
     #args.append("furiosa")
     #args.append("-l")
     #args.append("-q")
-    args.append("-r")
-    args.append("360")
+    #args.append("-r")
+    #args.append("360")
 
-    bell_media.download(args)
+    #bell_media.download(args)
 
     exit()
 

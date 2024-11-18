@@ -33,8 +33,13 @@ def login(settings_path: str, service_name: str):
             refresh_token = tokens_info['r_token']
             expiry = tokens_info['expiry']
 
-    except FileNotFoundError:
-        refresh_token, access_token, expiry = ensure_login(username, password, refresh_token, service_name)
+    except:
+        try:
+            refresh_token, access_token, expiry = ensure_login(username, password, refresh_token, service_name)
+        except:
+            refresh_token = ""
+            access_token = ""
+            expiry = 0.0
 
 
     # ===========================================================

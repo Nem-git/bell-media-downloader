@@ -106,7 +106,7 @@ def parse_season_episode(seasons_episodes: str):
         start_episode = 0
         end_episode = 999
 
-    return url, start_season, end_season, start_episode, end_episode
+    return start_season, end_season, start_episode, end_episode
 
 
 def read_creds_from_file(file_path: str) -> tuple[str, str, str, str]:
