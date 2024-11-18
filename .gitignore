@@ -175,5 +175,5 @@ index-multi-drm_*
 manifest*
 
 # Important files
-tokens.json
+*.json
 *.wvd

@@ -1,7 +1,4 @@
-import json
-import logging
-from typing import Dict, List
-from datetime import datetime, timedelta
+from datetime import datetime
 import base64
 import requests
 import tools
@@ -10,16 +7,10 @@ import time
 
 # Logger
 
-access_token = None
-refresh_token = None
-expiry = None
 subscriptions = None
 scopes = None
 packages = None
-session = requests.Session()
-username = None
-password = None
-settings_path = "settings.json"
+#session = requests.Session()
 
 
 # ===================================================================
@@ -27,31 +18,31 @@ settings_path = "settings.json"
 # ===================================================================
 
 
-def login(settings_path: str, service_name):
+def login(settings_path: str, service_name: str):
 
     username, password, wvd_path, custom_string = tools.read_creds_from_file(file_path=settings_path)
-    refresh_token = None
-
+    refresh_token = ""
+    access_token = ""
+    expiry = 0.0
     try:
-        tokens_info = tools.read_tokens()
+        tokens_info = tools.read_tokens(f"{service_name}_tokens")
+        if time.mktime(datetime.now().timetuple()) > tokens_info['expiry']:
+            refresh_token, access_token, expiry = ensure_login(username, password, refresh_token, service_name)
+        else:
+            access_token = tokens_info['a_token']
+            refresh_token = tokens_info['r_token']
+            expiry = tokens_info['expiry']
 
-        access_token = tokens_info['a_token']
-        refresh_token = tokens_info['r_token']
-        expiry = time.mktime(datetime.now().timetuple()) + tokens_info['expiry']
-    
-    except:
-        try:
-            expiry, access_token, refresh_token = ensure_login(username, password, refresh_token, service_name)
-        except:
-            expiry = 0
-            access_token = ""
-            refresh_token = ""
+    except FileNotFoundError:
+        refresh_token, access_token, expiry = ensure_login(username, password, refresh_token, service_name)
+
 
     # ===========================================================
     # Skip if current token is valid
     # ===========================================================
 
-    tools.write_tokens({"a_token": access_token, "r_token": refresh_token, "expiry": expiry})
+    headers = {"a_token": access_token, "r_token": refresh_token, "expiry": expiry}
+    tools.write_tokens(f"{service_name}_tokens", headers)
     headers = {"Authorization": access_token}
 
     return headers, wvd_path, custom_string
@@ -59,13 +50,13 @@ def login(settings_path: str, service_name):
 
 
 
-def ensure_login(username, password, refresh_token, service_name) -> bool:
+def ensure_login(username, password, refresh_token, service_name) -> None | tuple[str, str, float]:
     
     # ===========================================================
     # Refresh token if possible
     # ===========================================================
     r = None
-    if refresh_token is not None:
+    if refresh_token != "":
         r = refresh_request(refresh_token, service_name)
         if r.status_code != 200:
             r = None
@@ -92,11 +83,11 @@ def ensure_login(username, password, refresh_token, service_name) -> bool:
     # ===========================================================
     
     resp = r.json()
-    access_token = "Bearer " + resp['access_token']
-    refresh_token = resp['refresh_token']
-    expiry = time.mktime(datetime.now().timetuple()) + resp['expires_in']
+    access_token: str = "Bearer " + resp['access_token']
+    refresh_token: str = resp['refresh_token']
+    expiry: float = time.mktime(datetime.now().timetuple()) + resp['expires_in']
 
-    return expiry, access_token, refresh_token
+    return refresh_token, access_token, expiry
 
 
 # ===================================================================
@@ -127,8 +118,8 @@ def refresh_request(refresh_token, service_name) -> requests.Response:
         'content-type': 'application/x-www-form-urlencoded',
         'user-agent': 'okhttp/4.9.0'
     }
-    data = 'refresh_token={}'.format(refresh_token)
-    return session.post(url=url, headers=headers, data=data)
+    data = f'refresh_token={refresh_token}'
+    return requests.post(url=url, headers=headers, data=data)
 
 
 
@@ -148,7 +139,7 @@ def login_request(username, password, service_name) -> requests.Response:
     password = password.replace('&', '%26').replace('?', '%3F')
     data = f'password={password}&username={username}'
 
-    return session.post(url=url, headers=headers, data=data)
+    return requests.post(url=url, headers=headers, data=data)
 
 
 
