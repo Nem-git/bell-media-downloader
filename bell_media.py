@@ -472,24 +472,24 @@ bell_media = Bell_Media()
 
 if len(args) < 2:
     #print(crave_tools.help_text)
-    bell_media.tool = crave_tools
-    bell_media.service = "crave"
-    args.append(bell_media.service)
-    args.append("download")
-    args.append("caddo lake")
+    #bell_media.tool = crave_tools
+    #bell_media.service = "crave"
+    #args.append(bell_media.service)
+    #args.append("download")
+    #args.append("caddo lake")
     #args.append("download")
     #args.append("med")
-    args.append("-l")
-    args.append("-s")
-    args.append("-ad")
+    #args.append("-l")
+    #args.append("-s")
+    #args.append("-ad")
     #args.append("download")
     #args.append("furiosa")
     #args.append("-l")
     #args.append("-q")
-    args.append("-r")
-    args.append("360")
+    #args.append("-r")
+    #args.append("360")
 
-    bell_media.download(args)
+    #bell_media.download(args)
 
     exit()
 
