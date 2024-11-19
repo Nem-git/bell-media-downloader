@@ -68,7 +68,7 @@ class Bell_Media:
         if show["mediaType"] == "SERIES":
     
             if self.service == "crave":
-                for season in show["seasons"]:
+                for season in reversed(show["seasons"]):
                     show["episodes"].extend(self.go_through_season(season, quiet))
             if self.service == "noovo":
                 for season in reversed(show["seasons"]):
@@ -122,8 +122,9 @@ class Bell_Media:
         show["mediaType"] = resp["data"]["contentData"]["mediaType"]
         #show["requestedType"] = resp["data"]["contentData"]["requestedType"]
         #show["country"] = resp["data"]["contentData"]["structuredMetadata"]["countryOfOrigin"]["name"]
-        show["language"] = resp["data"]["contentData"]["normalizedRatingCodes"][0]["language"]
+        show["language"] = resp["data"]["contentData"]["originalSpokenLanguage"]
         show["description"] = resp["data"]["contentData"]["description"]
+        show["releaseYear"] = resp["data"]["contentData"]["firstAirYear"]
         #show["type"] = resp["data"]["contentData"]
         #show["numberOfEpisodes"] = resp["data"]["contentData"]
     
@@ -248,7 +249,7 @@ class Bell_Media:
     
             if episode["seasonNumber"] == 0 and episode["episodeNumber"] == 0:
                 options["clean_name"] = chosen_episodes["title"]
-                options["path"] = tools.clean_filename(chosen_episodes["title"])
+                options["path"] = tools.clean_filename(f'{chosen_episodes["title"]}.{chosen_episodes["releaseYear"]}.{options["language"].upper()}')
             
             else:
                 options["path"] = f'{tools.clean_filename(chosen_episodes["title"])}.S{episode["seasonNumber"]:02}E{episode["episodeNumber"]:02}.{options["language"].upper()[:2]}'
@@ -274,18 +275,19 @@ class Bell_Media:
     
         low_res_mpd = self.tool.mpd_url(id, second_id, service_hub_name, options["headers"])
     
-        mpd_url: str = low_res_mpd.replace("zbest", "zultimate")
-    
-        licence_url: str = config_resp["api"]["drmLicenceServerUrl"] + "/widevine"
-        if self.service == "crave":
-            for value in options["headers"].values():
-                licence_url += "?jwt=" + value.replace("Bearer ", "")
-    
-        options["mpd_url"] = mpd_url
-        options["licence_url"] = licence_url
-
+        options["mpd_url"] = low_res_mpd.replace("best", "ultimate")
         options["subs_url"] = self.tool.subtitles_url(id, second_id, service_hub_name)
     
+        options["licence_url"]: str = config_resp["api"]["drmLicenceServerUrl"] + "/widevine"
+
+        if self.service == "crave":
+            clean_auth_token = options["headers"]["Authorization"].replace("Bearer ", "")
+
+            options["licence_url"] += "?jwt=" + clean_auth_token
+            options["mpd_url"] += "?jwt=" + clean_auth_token
+            options["subs_url"] += "?jwt=" + clean_auth_token
+    
+
         return self.download_bell(options)
     
     def download_bell(self, options):
@@ -362,15 +364,15 @@ class Bell_Media:
         mkvmerge_command.extend(["--original-flag", "0", "--default-track-flag", "0", "--track-name", f'0:original {options["resolution"]}p', f'{options["path"]}.mp4'])
     
         #AUDIO
-        mkvmerge_command.extend(["--original-flag", "0", "--default-track-flag", "0", "--language", f'0:{options["language"]}', "--track-name", f"0:{track_name}", audio_1[0]])
+        mkvmerge_command.extend(["--original-flag", "0", "--default-track-flag", "0", "--language", f'0:{options["language"].lower()}', "--track-name", f"0:{track_name}", audio_1[0]])
         
         if options["all_audios"]:
             #AUDIODESCRIPTION
-            mkvmerge_command.extend(["--visual-impaired-flag", "1", "--default-track-flag", "0:0", "--language", f'0:{options["language"]}', "--track-name", f"0:{track_name} AD", audio_2[0]])
+            mkvmerge_command.extend(["--visual-impaired-flag", "1", "--default-track-flag", "0:0", "--language", f'0:{options["language"].lower()}', "--track-name", f"0:{track_name} AD", audio_2[0]])
     
         if options["subs"]:
             if subs != []:
-                mkvmerge_command.extend(["--language", f'0:{options["language"]}', "--track-name", f"0:{track_name} ", subs[0]])
+                mkvmerge_command.extend(["--language", f'0:{options["language"].lower()}', "--track-name", f"0:{track_name} ", subs[0]])
     
         if options["quiet"]:
             subprocess.run(mkvmerge_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -470,24 +472,24 @@ bell_media = Bell_Media()
 
 if len(args) < 2:
     #print(crave_tools.help_text)
-    #bell_media.tool = noovo_tools
-    #bell_media.service = "noovo"
-    #args.append(bell_media.service)
-    #args.append("download")
-    #args.append("club")
+    bell_media.tool = crave_tools
+    bell_media.service = "crave"
+    args.append(bell_media.service)
+    args.append("download")
+    args.append("caddo lake")
     #args.append("download")
     #args.append("med")
-    #args.append("-l")
-    #args.append("-s")
-    #args.append("-ad")
+    args.append("-l")
+    args.append("-s")
+    args.append("-ad")
     #args.append("download")
     #args.append("furiosa")
     #args.append("-l")
     #args.append("-q")
-    #args.append("-r")
-    #args.append("360")
+    args.append("-r")
+    args.append("360")
 
-    #bell_media.download(args)
+    bell_media.download(args)
 
     exit()
 

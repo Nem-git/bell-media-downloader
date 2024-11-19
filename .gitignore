@@ -179,3 +179,6 @@ manifest*
 *.wvd
 *.m4s
 *.mpd
+*.vtt
+*.itmp
+*.tmp

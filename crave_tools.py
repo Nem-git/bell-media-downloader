@@ -30,7 +30,7 @@ def validate_url(show_path: str):
 
 
 def mpd_url(first_id: str, second_id: str, service_hub_name: str, headers):
-    url = f"https://capi.9c9media.com/destinations/{service_hub_name}/platforms/desktop/playback/contents/{first_id}/contentPackages/{second_id}/manifest.mpd?action=reference&ssl=true&filter=fe&did=6738fced4723217605206e46&mca=true&uhd=true&mcv=true&hd=true&tpt=true&mta=true&stt=true&multilang=true"
+    url = f"https://capi.9c9media.com/destinations/{service_hub_name}/platforms/desktop/playback/contents/{first_id}/contentPackages/{second_id}/manifest.mpd?action=reference&ssl=true&filter=fe&mca=true&uhd=true&mcv=true&hd=true&tpt=true&mta=true&stt=true&multilang=true"
 
     resp = "Error"
 
@@ -83,7 +83,7 @@ def show_id_url(show_id: str):
             "maturity": "ADULT",
             "language": "FRENCH",
             "authenticationState": "UNAUTH",
-            "playbackLanguage": "ENGLISH"
+            "playbackLanguage": "FRENCH"
         },
         "extensions": {
             "persistedQuery": {
@@ -95,7 +95,7 @@ def show_id_url(show_id: str):
     }
 
     encoded_show_id: str = urllib.parse.quote_plus(show_id)
-    url: str = f"https://www.crave.ca/space-graphql/apq/graphql?operationName=axisMedia&variables=%7B%22axisMediaId%22%3A%22{encoded_show_id}%22%2C%22subscriptions%22%3A%5B%22CRAVE%22%2C%22CRAVEADS%22%2C%22STARZ%22%2C%22SUPER_ECRAN%22%5D%2C%22maturity%22%3A%22ADULT%22%2C%22language%22%3A%22FRENCH%22%2C%22authenticationState%22%3A%22UNAUTH%22%2C%22playbackLanguage%22%3A%22ENGLISH%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%22f0ba1b6eb93a1ce5b545f67867a4e1f394d1c19744b2b381555e6c2137126e60%22%7D%7D"
+    url: str = f"https://www.crave.ca/space-graphql/apq/graphql?operationName=axisMedia&variables=%7B%22axisMediaId%22%3A%22{encoded_show_id}%22%2C%22subscriptions%22%3A%5B%22CRAVE%22%2C%22CRAVEADS%22%2C%22STARZ%22%2C%22SUPER_ECRAN%22%5D%2C%22maturity%22%3A%22ADULT%22%2C%22language%22%3A%22FRENCH%22%2C%22authenticationState%22%3A%22UNAUTH%22%2C%22playbackLanguage%22%3A%22FRENCH%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%22f0ba1b6eb93a1ce5b545f67867a4e1f394d1c19744b2b381555e6c2137126e60%22%7D%7D"
     url: str = f"https://www.crave.ca/space-graphql/apq/graphql"
 
     resp = {"errors": {}}
@@ -110,8 +110,8 @@ def show_path_url(show_path: str):
 
     encoded_show_path = urllib.parse.quote_plus(show_path)
 
-    url = f"https://www.crave.ca/space-graphql/apq/graphql?operationName=resolvePath&variables=%7B%22page%22%3A0%2C%22path%22%3A%22{encoded_show_path}%22%2C%22subscriptions%22%3A%5B%22CRAVEADS%22%5D%2C%22maturity%22%3A%22ADULT%22%2C%22language%22%3A%22FRENCH%22%2C%22authenticationState%22%3A%22AUTH%22%2C%22playbackLanguage%22%3A%22ENGLISH%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%2226d314b59ba2708d261067964353f9a92f1c2689f50d1254fa4d03ddb9b9092a%22%7D%7D"
-    url = f"https://www.crave.ca/space-graphql/apq/graphql?operationName=resolvePath&variables=%7B%22page%22%3A0%2C%22path%22%3A%22{encoded_show_path}%22%2C%22subscriptions%22%3A%5B%22CRAVE%22%2C%22CRAVEADS%22%2C%22STARZ%22%2C%22SUPER_ECRAN%22%5D%2C%22maturity%22%3A%22ADULT%22%2C%22language%22%3A%22ENGLISH%22%2C%22authenticationState%22%3A%22UNAUTH%22%2C%22playbackLanguage%22%3A%22ENGLISH%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%2226d314b59ba2708d261067964353f9a92f1c2689f50d1254fa4d03ddb9b9092a%22%7D%7D"
+    url = f"https://www.crave.ca/space-graphql/apq/graphql?operationName=resolvePath&variables=%7B%22page%22%3A0%2C%22path%22%3A%22{encoded_show_path}%22%2C%22subscriptions%22%3A%5B%22CRAVEADS%22%5D%2C%22maturity%22%3A%22ADULT%22%2C%22language%22%3A%22FRENCH%22%2C%22authenticationState%22%3A%22AUTH%22%2C%22playbackLanguage%22%3A%22FRENCH%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%2226d314b59ba2708d261067964353f9a92f1c2689f50d1254fa4d03ddb9b9092a%22%7D%7D"
+    url = f"https://www.crave.ca/space-graphql/apq/graphql?operationName=resolvePath&variables=%7B%22page%22%3A0%2C%22path%22%3A%22{encoded_show_path}%22%2C%22subscriptions%22%3A%5B%22CRAVE%22%2C%22CRAVEADS%22%2C%22STARZ%22%2C%22SUPER_ECRAN%22%5D%2C%22maturity%22%3A%22ADULT%22%2C%22language%22%3A%22FRENCH%22%2C%22authenticationState%22%3A%22UNAUTH%22%2C%22playbackLanguage%22%3A%22FRENCH%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%2226d314b59ba2708d261067964353f9a92f1c2689f50d1254fa4d03ddb9b9092a%22%7D%7D"
 
     r = requests.get(url, headers=headers)
     
@@ -132,7 +132,7 @@ def season_id_url(season_id: str):
             "maturity": "ADULT",
             "language": "FRENCH",
             "authenticationState": "UNAUTH",
-            "playbackLanguage": "ENGLISH",
+            "playbackLanguage": "FRENCH",
             "seasonId": season_id
         },
         "extensions": {
