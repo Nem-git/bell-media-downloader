@@ -1,6 +1,7 @@
 import os
 import json
 import string
+from unidecode import unidecode
 
 
 
@@ -151,7 +152,13 @@ def get_downloaded_name(filename, filetype, known_files):
                     files.append(file)
     return files
 
+
 def clean_filename(name: str) -> str:
+    try:
+        name = unidecode(name)
+    except NameError:
+        pass
+
     accepted_charaters = string.ascii_letters + string.digits + "-."
     new_name = ""
     for char in name:
