@@ -55,7 +55,7 @@ def login(settings_path: str, service_name: str):
 
 
 
-def ensure_login(username, password, refresh_token, service_name) -> None | tuple[str, str, float]:
+def ensure_login(username, password, refresh_token, service_name):
     
     # ===========================================================
     # Refresh token if possible

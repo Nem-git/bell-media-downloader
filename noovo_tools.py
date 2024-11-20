@@ -30,7 +30,7 @@ def validate_url(show_path: str):
 
 
 def mpd_url(first_id: str, second_id: str, service_hub_name: str, headers):
-    url = f"https://capi.9c9media.com/destinations/{service_hub_name}/platforms/desktop/playback/contents/{first_id}/contentPackages/{second_id}/manifest.mpd?action=reference&ssl=true&filter=fe&mca=true&uhd=true&mcv=true&hd=true&tpt=true&mta=true&stt=true"
+    url = f"https://capi.9c9media.com/destinations/{service_hub_name}/platforms/desktop/playback/contents/{first_id}/contentPackages/{second_id}/manifest.mpd?action=reference&ssl=true&filter=fe&uhd=true&hd=true&mcv=false&mca=true&mta=true&tpt=false&stt=false"
 
     resp = "Error"
 

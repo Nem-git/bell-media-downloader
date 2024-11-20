@@ -278,7 +278,7 @@ class Bell_Media:
         options["mpd_url"] = low_res_mpd.replace("best", "ultimate")
         options["subs_url"] = self.tool.subtitles_url(id, second_id, service_hub_name)
     
-        options["licence_url"]: str = config_resp["api"]["drmLicenceServerUrl"] + "/widevine"
+        options["licence_url"] = config_resp["api"]["drmLicenceServerUrl"] + "/widevine"
 
         if self.service == "crave":
             clean_auth_token = options["headers"]["Authorization"].replace("Bearer ", "")
@@ -470,13 +470,15 @@ class Bell_Media:
 args = sys.argv
 bell_media = Bell_Media()
 
-if len(args) < 2:
+if len(args) < 3:
     #print(crave_tools.help_text)
     #bell_media.tool = crave_tools
     #bell_media.service = "crave"
     #args.append(bell_media.service)
     #args.append("download")
-    #args.append("caddo lake")
+    #args.append("club soly")
+    #args.append("-r")
+    #args.append("360")
     #args.append("download")
     #args.append("med")
     #args.append("-l")
