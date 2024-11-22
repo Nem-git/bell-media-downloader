@@ -106,6 +106,7 @@ class Bell_Media:
             episode_info = self.get_episodes_info(episode)
             episode_info["seasonNumber"] = season["seasonNumber"]
             episode_info["seasonTitle"] = season["title"]
+            #episode_info[""]
     
             episodes.append(episode_info)
     
@@ -155,6 +156,7 @@ class Bell_Media:
         episode_info["axisId"] = episode["axisId"]
         episode_info["title"] = episode["title"]
         episode_info["duration"] = episode["duration"]
+        episode_info["contentType"] = episode["contentType"]
         #episode_info["destinationCode"] = episode["authConstraints"][0]["packageName"]
 
         # NEED TO WORK ON THIS, I CAN FIND IT
@@ -170,6 +172,7 @@ class Bell_Media:
             episode_info["description"] = episode["summary"]
         
         episode_info["episodeNumber"] = episode["episodeNumber"]
+
         #episode_info["contentType"] = episode["contentType"]
     
         return episode_info
@@ -255,7 +258,7 @@ class Bell_Media:
                 options["path"] = f'{tools.clean_filename(chosen_episodes["title"])}.S{episode["seasonNumber"]:02}E{episode["episodeNumber"]:02}.{options["language"].upper()[:2]}'
                 options["clean_name"] = f'{chosen_episodes["title"]} Saison {episode["seasonNumber"]} Episode {episode["episodeNumber"]}'
     
-            if options["all_audios"]:
+            if options["audio_description"]:
                 options["path"] += ".AD"
             
             options["path"] += f'.{options["resolution"]}p{custom_string}'
@@ -291,34 +294,11 @@ class Bell_Media:
         return self.download_bell(options)
     
     def download_bell(self, options):
-    
+
         options["pssh"] = dash.get_pssh(options["mpd_url"], options["quiet"])
     
         options["decryption_keys"] = dash.setup_licence_challenge(options["pssh"], options["licence_url"], options["wvd_path"], options["headers"])
-    
-        n_m3u8dl_re_command = [
-            "n-m3u8dl-re",
-            options["mpd_url"],
-            "-mt",
-            "--mp4-real-time-decryption",
-            "--use-shaka-packager",
-            "-sv",
-            f'res={options["resolution"]}*',
-            "--save-name",
-            options["path"]
-        ]
-    
-        for key in options["decryption_keys"]:
-            n_m3u8dl_re_command.append("--key")
-            n_m3u8dl_re_command.append(key)
-    
-        if options["all_audios"]:
-            n_m3u8dl_re_command.append("-sa")
-            n_m3u8dl_re_command.append("all")
-        else:
-            n_m3u8dl_re_command.append("-sa")
-            n_m3u8dl_re_command.append("best")
-        
+
         if options["subs"]:
             vtt_text = requests.get(options["subs_url"], headers=options["headers"]).content
             if self.service == "crave":
@@ -326,61 +306,12 @@ class Bell_Media:
             
             with open(f"{options['path']}.vtt", "wb") as f:
                 f.write(vtt_text)
-    
-        if options["quiet"]:
-            subprocess.run(n_m3u8dl_re_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        else:
-            subprocess.run(n_m3u8dl_re_command)
-    
-        mkvmerge_command = [
-            "mkvmerge",
-            "-o",
-            f"{options['path']}.mkv",
-            "--title",
-            options["clean_name"],
-            "--default-language",
-            options["language"]
-        ]
-    
-        audio_1 = tools.get_downloaded_name(options["path"], ".m4a", [])
-    
-        if options["all_audios"]:
-            audio_2 = tools.get_downloaded_name(options["path"], ".copy.m4a", [audio_1[0]])
-        
-        if options["subs"]:
-            subs = tools.get_downloaded_name(options["path"], ".vtt", [])
-    
-        if options["quiet"]:
-            mkvmerge_command.append("-q")
-        else:
-            mkvmerge_command.append("-v")
-    
-        track_name = options["language"]
-    
-        if options["language"] == "fr-CA":
-            track_name = "VFQ"
-        
-        #VIDEO
-        mkvmerge_command.extend(["--original-flag", "0", "--default-track-flag", "0", "--track-name", f'0:original {options["resolution"]}p', f'{options["path"]}.mp4'])
-    
-        #AUDIO
-        mkvmerge_command.extend(["--original-flag", "0", "--default-track-flag", "0", "--language", f'0:{options["language"].lower()}', "--track-name", f"0:{track_name}", audio_1[0]])
-        
-        if options["all_audios"]:
-            #AUDIODESCRIPTION
-            mkvmerge_command.extend(["--visual-impaired-flag", "1", "--default-track-flag", "0:0", "--language", f'0:{options["language"].lower()}', "--track-name", f"0:{track_name} AD", audio_2[0]])
-    
-        if options["subs"]:
-            if subs != []:
-                mkvmerge_command.extend(["--language", f'0:{options["language"].lower()}', "--track-name", f"0:{track_name} ", subs[0]])
-    
-        if options["quiet"]:
-            subprocess.run(mkvmerge_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        else:
-            subprocess.run(mkvmerge_command)
-        
-        tools.delete_files(options["path"], [".mkv"])
-    
+
+        tools.n_m3u8dl_re_download(options)
+        tools.mkvmerge_merge(options)
+
+
+
     
     def help(self):
         print(self.tool.help_text)
@@ -456,7 +387,7 @@ class Bell_Media:
             options = {
                 "resolution": resolution,
                 "quiet": quiet,
-                "all_audios": audiodescription,
+                "audio_description": audiodescription,
                 "allow_trailers": allow_trailers,
                 "subs": subs
             }
@@ -485,7 +416,7 @@ if len(args) < 3:
     #args.append("-s")
     #args.append("-ad")
     #args.append("download")
-    #args.append("furiosa")
+    #args.append("")
     #args.append("-l")
     #args.append("-q")
     #args.append("-r")
