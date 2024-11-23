@@ -308,6 +308,7 @@ class Bell_Media:
                 f.write(vtt_text)
 
         tools.n_m3u8dl_re_download(options)
+        tools.remove_phantom_subs(options)
         tools.mkvmerge_merge(options)
 
 
