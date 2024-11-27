@@ -1,11 +1,9 @@
 import sys
 import tools
-import subprocess
 import dash
 import bell_tokens
 import crave_tools
 import noovo_tools
-import os
 import requests
 
 
@@ -292,6 +290,27 @@ class Bell_Media:
         #Loops through all the chosen episodes and downloads them all
         for episode in chosen_episodes["episodes"]:
             options["clean_name"] = chosen_episodes["title"]
+
+            if self.service == "crave":
+                episode_info_resp = self.tool.episode_id_url(episode["axisId"], service_hub_name)
+                options["language"] = episode_info_resp["SpokenLanguage"]
+
+            if self.service == "noovo":
+                episode_info_resp = self.tool.episode_id_url(episode["axisId"])
+                service_hub_name = episode_info_resp["data"]["axisContent"]["authConstraints"][0]["packageName"]
+
+                if episode_info_resp["data"]["axisContent"]["playbackMetadata"][0]["indicator"] != "DESCRIBED_VIDEO":
+                    options["audio_description"] = False
+
+                if len(episode_info_resp["data"]["axisContent"]["playbackMetadata"][1]["languages"]) >= 2:
+                    options["language"] = "FR"
+                else:
+                    options["language"] = episode_info_resp["data"]["axisContent"]["playbackMetadata"][1]["languages"][0]["languageCode"]
+
+                if len(episode_info_resp["data"]["axisContent"]["playbackMetadata"]) >= 3:
+                    if episode_info_resp["data"]["axisContent"]["playbackMetadata"][2]["indicator"] != "CLOSED_CAPTIONS":
+                        options["subs"] = False
+            
     
             if episode["seasonNumber"] == 0 and episode["episodeNumber"] == 0:
                 options["clean_name"] = chosen_episodes["title"]
@@ -310,24 +329,6 @@ class Bell_Media:
     
     
     def download_content(self, id: int, service_hub_name: str, options):
-        
-        if self.service == "crave":
-            episode_info_resp = self.tool.episode_id_url(id, service_hub_name)
-            options["language"] = episode_info_resp["SpokenLanguage"]
-
-        if self.service == "noovo":
-            episode_info_resp = self.tool.episode_id_url(id)
-            service_hub_name = episode_info_resp["data"]["axisContent"]["authConstraints"][0]["packageName"]
-
-            if episode_info_resp["data"]["axisContent"]["playbackMetadata"][0]["indicator"] != "DESCRIBED_AUDIO":
-                options["audio_description"] = False
-
-            if len(episode_info_resp["data"]["axisContent"]["playbackMetadata"][1]["languages"]) >= 2:
-                options["language"] = "FR"
-
-            if len(episode_info_resp["data"]["axisContent"]["playbackMetadata"]) >= 3:
-                if episode_info_resp["data"]["axisContent"]["playbackMetadata"][2]["indicator"] != "CLOSED_CAPTIONS":
-                    options["subs"] = False
     
         config_resp = self.tool.service_config(self.service)
     
@@ -466,19 +467,19 @@ bell_media = Bell_Media()
 
 if len(args) < 3:
     #print(crave_tools.help_text)
-    #bell_media.tool = crave_tools
-    #bell_media.service = "crave"
+    #bell_media.tool = noovo_tools
+    #bell_media.service = "noovo"
     #args.append(bell_media.service)
     #args.append("download")
-    #args.append("groulx")
-    #args.append("s7e1")
+    #args.append("occupation double mexique")
+    #args.append("s8e79-s8e79")
     #args.append("-r")
-    #args.append("360")
+    #args.append("1080")
+    #args.append("-s")
+    #args.append("-ad")
     #args.append("download")
     #args.append("med")
     #args.append("-l")
-    #args.append("-s")
-    #args.append("-ad")
     #args.append("download")
     #args.append("")
     #args.append("-l")

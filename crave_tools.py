@@ -3,17 +3,6 @@ import requests
 import urllib.parse
 import json
 
-headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0",
-        "Accept": "*/*",
-        "Accept-Language": "en-US,en;q=0.5",
-        "content-type": "application/json",
-        "graphql-client-platform": "entpay_web",
-        "Sec-GPC": "1",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-origin"
-    }
 
 def validate_url(show_path: str):
     accepted_characters: str = string.ascii_lowercase + string.digits + "-/"
@@ -105,7 +94,7 @@ def show_id_url(show_id: str):
     resp = {"errors": {}}
     
     while "errors" in resp.keys():
-        resp = requests.post(url, headers=headers, data=json.dumps(body)).json()
+        resp = requests.post(url, data=json.dumps(body)).json()
         #resp = requests.get(url, headers=headers).json()
     
     return resp
@@ -117,7 +106,12 @@ def show_path_url(show_path: str):
     url = f"https://www.crave.ca/space-graphql/apq/graphql?operationName=resolvePath&variables=%7B%22page%22%3A0%2C%22path%22%3A%22{encoded_show_path}%22%2C%22subscriptions%22%3A%5B%22CRAVEADS%22%5D%2C%22maturity%22%3A%22ADULT%22%2C%22language%22%3A%22FRENCH%22%2C%22authenticationState%22%3A%22AUTH%22%2C%22playbackLanguage%22%3A%22FRENCH%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%2226d314b59ba2708d261067964353f9a92f1c2689f50d1254fa4d03ddb9b9092a%22%7D%7D"
     url = f"https://www.crave.ca/space-graphql/apq/graphql?operationName=resolvePath&variables=%7B%22page%22%3A0%2C%22path%22%3A%22{encoded_show_path}%22%2C%22subscriptions%22%3A%5B%22CRAVE%22%2C%22CRAVEADS%22%2C%22STARZ%22%2C%22SUPER_ECRAN%22%5D%2C%22maturity%22%3A%22ADULT%22%2C%22language%22%3A%22FRENCH%22%2C%22authenticationState%22%3A%22UNAUTH%22%2C%22playbackLanguage%22%3A%22FRENCH%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%2226d314b59ba2708d261067964353f9a92f1c2689f50d1254fa4d03ddb9b9092a%22%7D%7D"
 
-    r = requests.get(url, headers=headers)
+    i = 0
+    
+    r = requests.get(url)
+    while "errors" in r.text and i < 5:
+        r = requests.get(url)
+        i += 1
     
     return r
 

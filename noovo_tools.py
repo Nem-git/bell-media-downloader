@@ -3,18 +3,6 @@ import requests
 import urllib.parse
 import json
 
-headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0",
-        "Accept": "*/*",
-        "Accept-Language": "en-US,en;q=0.5",
-        "content-type": "application/json",
-        "graphql-client-platform": "entpay_web",
-        "Sec-GPC": "1",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-origin"
-    }
-
 def validate_url(show_path: str):
     accepted_characters: str = string.ascii_lowercase + string.digits + "-/"
     for char in show_path:
@@ -80,7 +68,7 @@ def show_id_url(show_id: str):
     resp = {"errors": {}}
     
     while "errors" in resp.keys():
-        resp = requests.get(url, headers=headers).json()
+        resp = requests.get(url).json()
     
     return resp
 
@@ -114,7 +102,7 @@ def show_path_url(show_path: str):
 
     url = f"https://www.noovo.ca/space-graphql/apq/graphql"
     
-    r = requests.post(url, headers=headers, data=json.dumps(body))
+    r = requests.post(url, data=json.dumps(body))
 
     return r
 
