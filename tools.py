@@ -233,10 +233,13 @@ def n_m3u8dl_re_download(options):
             subprocess.run(command)
 
 def remove_phantom_subs(options):
+
+    dirty_video_path = get_downloaded_name(f'{options["path"]}.dirty', ".mp4", [])
+
     ffmpeg_command = [
         "ffmpeg",
         "-i",
-        f'{options["path"]}.dirty.mp4',
+        dirty_video_path[0],
         "-map",
         "0",
         "-codec",

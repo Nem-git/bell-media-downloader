@@ -36,6 +36,10 @@ def mpd_url(first_id: str, second_id: str, service_hub_name: str, headers):
 
     while "Error" in resp:
         resp = requests.get(url, headers=headers).text
+
+        if '"ErrorCode":"401"' in resp:
+            print("You don't have access to this content")
+            exit()
     
     return resp
 
@@ -156,7 +160,10 @@ def season_id_url(season_id: str):
 def episode_id_url(episode_id: str, service_hub_name: str):
     
     # TRy to change crave_atexace_avod to se_atexace
-    url = f"https://capi.9c9media.com/destinations/crave_atexace/platforms/desktop/contents/{episode_id}?%24lang=fr&%24include=%5BDesc%2CType%2CMedia%2CImages%2CContentPackages%2CAuthentication%2CSeason%2CChannelAffiliate%2COwner%2CRevShare%2CAdTarget%2CKeywords%2CAdRights%2CTags%5D"
+    url = f"https://capi.9c9media.com/destinations/{service_hub_name}/platforms/desktop/contents/{episode_id}?%24lang=fr&%24include=%5BDesc%2CType%2CMedia%2CImages%2CContentPackages%2CAuthentication%2CSeason%2CChannelAffiliate%2COwner%2CRevShare%2CAdTarget%2CKeywords%2CAdRights%2CTags%5D"
+
+    url = f"https://capi.9c9media.com/destinations/{service_hub_name}/platforms/desktop/contents/{episode_id}?$lang=fr"
+
 
     resp = {"errors": {}}
     

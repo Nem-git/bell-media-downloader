@@ -36,6 +36,10 @@ def mpd_url(first_id: str, second_id: str, service_hub_name: str, headers):
 
     while "Error" in resp:
         resp = requests.get(url, headers=headers).text
+        
+        if '"ErrorCode":"401"' in resp:
+            print("You don't have access to this content")
+            exit()
 
     return resp
 
@@ -157,7 +161,7 @@ def episode_id_url(episode_id: str):
     body = {
         "operationName": "axisContent",
         "variables": {
-            "id": episode_id,
+            "id": f"contentid/axis-content-{episode_id}",
             "subscriptions": [
                 "CANAL_D",
                 "CANAL_VIE",

@@ -48,10 +48,10 @@ class Bell_Media:
         if "errors" in resp:
             show_id = show["id"]
         else:
-            show_id = resp["data"]["resolvedPath"]["segments"][1]["content"]["id"]
+            show_id = resp["data"]["resolvedPath"]["lastSegment"]["content"]["id"]
         
         resp = self.tool.show_id_url(show_id)
-    
+        
         show = self.get_show_info(resp)
         
         if not quiet:
@@ -66,13 +66,28 @@ class Bell_Media:
         show["episodes"] = []
 
         if show["mediaType"] == "SERIES":
-    
-            if self.service == "crave":
-                for season in reversed(show["seasons"]):
-                    show["episodes"].extend(self.go_through_season(season, quiet))
-            if self.service == "noovo":
-                for season in reversed(show["seasons"]):
-                    show["episodes"].extend(self.go_through_season(season, quiet))
+            if len(show["seasons"]) > 1:
+                if show["seasons"][0]["seasonNumber"] > show["seasons"][1]["seasonNumber"]:
+                    if self.service == "crave":
+                        for season in reversed(show["seasons"]):
+                            show["episodes"].extend(self.go_through_season(season, quiet))
+                    if self.service == "noovo":
+                        for season in reversed(show["seasons"]):
+                            show["episodes"].extend(self.go_through_season(season, quiet))
+                else:
+                    if self.service == "crave":
+                        for season in show["seasons"]:
+                            show["episodes"].extend(self.go_through_season(season, quiet))
+                    if self.service == "noovo":
+                        for season in show["seasons"]:
+                            show["episodes"].extend(self.go_through_season(season, quiet))
+            else:
+                if self.service == "crave":
+                    for season in show["seasons"]:
+                        show["episodes"].extend(self.go_through_season(season, quiet))
+                if self.service == "noovo":
+                    for season in show["seasons"]:
+                        show["episodes"].extend(self.go_through_season(season, quiet))
         
         else:
             for episode in resp["data"]["contentData"]["mainContents"]["page"]["items"]:
@@ -100,18 +115,46 @@ class Bell_Media:
         resp = self.tool.season_id_url(season["id"])
         
         episodes = []
-    
-        for episode in resp["data"]["axisSeason"]["episodes"]:
-        
-            episode_info = self.get_episodes_info(episode)
-            episode_info["seasonNumber"] = season["seasonNumber"]
-            episode_info["seasonTitle"] = season["title"]
-            #episode_info[""]
-    
-            episodes.append(episode_info)
-    
-            if not quiet:
-                print(f'{episode["path"]} - {season["title"]} - {episode["title"]}')
+
+        if len(resp["data"]["axisSeason"]["episodes"]) > 1:
+            if resp["data"]["axisSeason"]["episodes"][0]["episodeNumber"] > resp["data"]["axisSeason"]["episodes"][1]["episodeNumber"]:
+                for episode in reversed(resp["data"]["axisSeason"]["episodes"]):
+                
+                    episode_info = self.get_episodes_info(episode)
+                    episode_info["seasonNumber"] = season["seasonNumber"]
+                    episode_info["seasonTitle"] = season["title"]
+                    #episode_info[""]
+
+                    episodes.append(episode_info)
+
+                    if not quiet:
+                        print(f'{episode["path"]} - {season["title"]} - {episode["title"]}')
+            
+            else:
+                for episode in resp["data"]["axisSeason"]["episodes"]:
+                
+                    episode_info = self.get_episodes_info(episode)
+                    episode_info["seasonNumber"] = season["seasonNumber"]
+                    episode_info["seasonTitle"] = season["title"]
+                    #episode_info[""]
+
+                    episodes.append(episode_info)
+
+                    if not quiet:
+                        print(f'{episode["path"]} - {season["title"]} - {episode["title"]}')
+
+        else:
+            for episode in resp["data"]["axisSeason"]["episodes"]:
+            
+                episode_info = self.get_episodes_info(episode)
+                episode_info["seasonNumber"] = season["seasonNumber"]
+                episode_info["seasonTitle"] = season["title"]
+                #episode_info[""]
+
+                episodes.append(episode_info)
+
+                if not quiet:
+                    print(f'{episode["path"]} - {season["title"]} - {episode["title"]}')
     
         return episodes
     
@@ -156,7 +199,7 @@ class Bell_Media:
         episode_info["axisId"] = episode["axisId"]
         episode_info["title"] = episode["title"]
         episode_info["duration"] = episode["duration"]
-        episode_info["contentType"] = episode["contentType"]
+        #episode_info["contentType"] = episode["contentType"]
         #episode_info["destinationCode"] = episode["authConstraints"][0]["packageName"]
 
         # NEED TO WORK ON THIS, I CAN FIND IT
@@ -267,12 +310,32 @@ class Bell_Media:
     
     
     def download_content(self, id: int, service_hub_name: str, options):
-    
-        #episode_info_resp = self.tool.episode_id_url(id, service_hub_name)
+        
+        if self.service == "crave":
+            episode_info_resp = self.tool.episode_id_url(id, service_hub_name)
+            options["language"] = episode_info_resp["SpokenLanguage"]
+
+        if self.service == "noovo":
+            episode_info_resp = self.tool.episode_id_url(id)
+            service_hub_name = episode_info_resp["data"]["axisContent"]["authConstraints"][0]["packageName"]
+
+            if episode_info_resp["data"]["axisContent"]["playbackMetadata"][0]["indicator"] != "DESCRIBED_AUDIO":
+                options["audio_description"] = False
+
+            if len(episode_info_resp["data"]["axisContent"]["playbackMetadata"][1]["languages"]) >= 2:
+                options["language"] = "FR"
+
+            if len(episode_info_resp["data"]["axisContent"]["playbackMetadata"]) >= 3:
+                if episode_info_resp["data"]["axisContent"]["playbackMetadata"][2]["indicator"] != "CLOSED_CAPTIONS":
+                    options["subs"] = False
     
         config_resp = self.tool.service_config(self.service)
     
         episode_second_id_resp = self.tool.second_episode_id(id, service_hub_name)
+        
+        if len(episode_second_id_resp["Items"]) == 0:
+            print("You need an account to access this content")
+            exit()
         
         second_id = episode_second_id_resp["Items"][0]["Id"]
     
@@ -287,7 +350,6 @@ class Bell_Media:
             clean_auth_token = options["headers"]["Authorization"].replace("Bearer ", "")
 
             options["licence_url"] += "?jwt=" + clean_auth_token
-            options["mpd_url"] += "?jwt=" + clean_auth_token
             options["subs_url"] += "?jwt=" + clean_auth_token
     
 
@@ -408,7 +470,8 @@ if len(args) < 3:
     #bell_media.service = "crave"
     #args.append(bell_media.service)
     #args.append("download")
-    #args.append("club soly")
+    #args.append("groulx")
+    #args.append("s7e1")
     #args.append("-r")
     #args.append("360")
     #args.append("download")
